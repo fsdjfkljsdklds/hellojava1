@@ -3,10 +3,12 @@ package co.edu.dao;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import co.edu.board.BoardVO;
 import co.edu.board.LoginVO;
 import co.edu.common.DAO;
+import co.edu.common.MailApp;
 
 public class BoardDAO extends DAO {
 	// 입력, 조회, 수정, 삭제의 기능을 구현.
@@ -263,33 +265,75 @@ public class BoardDAO extends DAO {
 		}
 		return list;
 	}
+
 	// 로그인(String id, String passwd) =>MemberVO
-		public LoginVO login(String id, String passwd) {
-			getConnect();
-			String sql = "select * from members where id=? and passwd=?";
-			try {
-				psmt = conn.prepareStatement(sql);
-				psmt.setString(1, id);
-				psmt.setString(2, passwd);
+	public LoginVO login(String id, String passwd) {
+		getConnect();
+		String sql = "select * from members where id=? and passwd=?";
+		try {
+			psmt = conn.prepareStatement(sql);
+			psmt.setString(1, id);
+			psmt.setString(2, passwd);
 
-				rs = psmt.executeQuery();
-				if (rs.next()) {
-					LoginVO vo = new LoginVO();
-					vo.setId(rs.getString("id"));
-					vo.setPasswd(rs.getString("passwd"));
-					vo.setName(rs.getString("name"));
-					vo.setEmail(rs.getString("email"));
-					vo.setResponsibility(rs.getString("responsibility"));
-					return vo;
+			rs = psmt.executeQuery();
+			if (rs.next()) {
+				LoginVO vo = new LoginVO();
+				vo.setId(rs.getString("id"));
+				vo.setPasswd(rs.getString("passwd"));
+				vo.setName(rs.getString("name"));
+				vo.setEmail(rs.getString("email"));
+				vo.setResponsibility(rs.getString("responsibility"));
+				return vo;
 
-				}
-			} catch (SQLException e) {
-				e.printStackTrace();
-			} finally {
-				disconnect();
 			}
-			return null;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			disconnect();
+		}
+		return null;
+	}
+
+	// 비밀번호찾기
+	public LoginVO passwd(String id) {
+		Random random = new Random();
+		int createNum = 0;
+		String ranNum = "";
+		int letter = 6;
+		String resultNum = "";
+
+		for (int i = 0; i < letter; i++) {
+			createNum = random.nextInt(9);
+			ranNum = Integer.toString(createNum);
+			resultNum += ranNum;
 		}
 
+		getConnect();
+		MailApp sendmail = new MailApp();
+		String pw = "";
+		String tel = "";
+		String mail = "";
+
+		String sql = "select * from members where id='" + id + "'";
+		try {
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery(sql);
+			while (rs.next()) {
+				pw = rs.getString("passwd");
+				mail = rs.getString("email");
+			}
+			sendmail.sendMail("xelnaga456@naver.com", mail, "인증번호발급", resultNum);
+			System.out.println("인증번호발송");
+			System.out.println(resultNum);
+			sql = "update members set passwd = '" + resultNum + "' where id = '" + id + "'";
+			stmt.executeUpdate(sql);
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			disconnect();
+		}
+		return null;
+	}
 
 }

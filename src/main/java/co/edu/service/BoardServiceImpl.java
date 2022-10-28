@@ -56,4 +56,9 @@ public class BoardServiceImpl implements BoardService {
 		return dao.login(id, passwd);
 	}
 
+	@Override
+	public LoginVO passwdRe(String id) {
+		return dao.passwd(id);
+	}
+
 }
